@@ -1,0 +1,37 @@
+@import "mixins.less";
+
+h2 {
+    text-align: center;
+}
+#resizer {
+    resize: both;
+    overflow: hidden;
+    border: 6px solid #5bc0de;
+    background-size: 100% 100%;
+    width: 400px;
+    height: 400px;
+    margin: auto;
+    text-align: center;
+}
+
+#backboard {
+    position: absolute;
+    top: -2000px;
+    visibility: hidden;
+}
+.mask {
+    position: absolute!important;
+}
+#option {
+    select {
+        display: inline-block;
+        width: 150px;
+    }
+}
+#frontboard {
+    outline: none;
+    canvas {
+        display: block;
+        margin: auto;
+    }
+}
