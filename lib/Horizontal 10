@@ -1,0 +1,3 @@
+function (opacity, rc, config) {
+    return Math.ceil(opacity * rc.column / config.width);
+}

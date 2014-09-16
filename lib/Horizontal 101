@@ -1,0 +1,9 @@
+function (opacity, rc, config) {
+    var half = Math.ceil(config.width / 2);
+    if (rc.column > half) {
+        return Math.ceil(opacity * ( 2 * rc.column / config.width - 1 ));
+    }
+    else {
+        return Math.ceil(opacity * (1 - 2 * rc.column / config.width));
+    }
+}

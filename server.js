@@ -7,6 +7,7 @@ var mime = require('mime');
 var path = require('path');
 var root = path.dirname(module.filename);
 var less = require('less');
+var querystring = require('querystring');
 var parser = new (less.Parser)({
     paths: [path.join(__dirname, 'less')], // 指定@import搜索的目录
     filename: path.join(__dirname, 'less/' + 'error.less') // 为了更好地输出错误信息，可以指定一个文件名
@@ -26,12 +27,12 @@ function lessFilter(filePath, next) {
             }
         }
         if (out_of_date) {
-            fs.readFile(lessPath, "utf-8", function (err, lessContent) {
+            fs.readFile(lessPath, 'utf-8', function (err, lessContent) {
                 parser.parse(lessContent, function (err, tree) {
                     if (err) {
                         next(err, filePath);
                     } else {
-                        fs.writeFile(cssPath, tree.toCSS({ compress: true }), "utf-8", function (err) {
+                        fs.writeFile(cssPath, tree.toCSS({ compress: true }), 'utf-8', function (err) {
                             if (err) {
                                 next(err, filePath);
                             }
@@ -51,21 +52,66 @@ function lessFilter(filePath, next) {
         next(false, filePath);
     }
 }
-http.createServer(function(req, res) {
-    lessFilter(path.join(root, req.url), function(err, filePath) {
+http.createServer(function (req, res) {
+    lessFilter(path.join(root, req.url), function (err, filePath) {
         if (err) {
             throw err;
         }
         else {
-            res.writeHead(200, {'Content-Type': mime.lookup(filePath)});
-            fs.readFile(filePath, function(err, data) {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    res.end(data);
-                }
-            });
+            if (filePath === path.join(root, 'update')) {
+                var _postData = '';
+                //提取POST数据
+                req.on('data', function (data) {
+                    _postData += data;
+                });
+                req.on('end', function () {
+                    //保存POST数据
+                    req.post = querystring.parse(_postData);
+                    var key = req.post.key;
+                    var func = req.post.func;
+                    fs.writeFileSync(path.join('lib', key), func);
+                    res.writeHead(200, {'Content-Type': 'text/plain'});
+                    res.end(JSON.stringify({key: key, func: func}));
+                });
+            }
+            else if (filePath === path.join(root, 'delete')) {
+                var _postData = '';
+                //提取POST数据
+                req.on('data', function (data) {
+                    _postData += data;
+                });
+                req.on('end', function () {
+                    //保存POST数据
+                    req.post = querystring.parse(_postData);
+                    var key = req.post.key;
+                    fs.unlinkSync(path.join('lib', key));
+                    res.writeHead(200, {'Content-Type': 'text/plain'});
+                    res.end(JSON.stringify({key: key}));
+                });
+            }
+            else if (filePath === path.join(root, 'map.js')) {
+                fs.readdir('lib', function(err, files) {
+                    var map = '{\n';
+                    files.forEach(function(item, index) {
+                        var data = fs.readFileSync(path.join(root, 'lib', item)).toString();
+                        map += '\'' + item + '\':' + data + ',\n';
+                    });
+                    map = map.substr(0, map.length - 2) + '\n}';
+                    res.writeHead(200, {'Content-Type': 'text/plain'});
+                    res.end(map);
+                });
+            }
+            else {
+                res.writeHead(200, {'Content-Type': mime.lookup(filePath)});
+                fs.readFile(filePath, function (err, data) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        res.end(data);
+                    }
+                });
+            }
         }
     });
 }).listen(3000, '127.0.0.1');
