@@ -13,6 +13,32 @@ h2 {
     margin: auto;
     text-align: center;
 }
+.edit-group {
+    display: none;
+}
+#convert {
+    margin-top: -2px;
+}
+#function {
+    .CodeMirror {
+        border: 1px solid #ccc;
+        .border-radius(4px);
+        .box-shadow(0 1px 1px rgba(0, 0, 0, 0.075) inset);
+    }
+}
+#flex {
+    display: flex;
+    select {
+        flex: 1;
+    }
+    button {
+        margin-left: 15px;
+    }
+    div {
+        margin-left: 15px;
+        display: inline-block;
+    }
+}
 
 #backboard {
     position: absolute;
@@ -26,6 +52,10 @@ h2 {
     select {
         display: inline-block;
         width: 150px;
+    }
+    width: 100%!important;
+    div {
+        margin-right: 0px;
     }
 }
 #frontboard {

@@ -12,32 +12,163 @@
     <script src="js/jquery.js"></script>
     <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
     <script src="bootstrap3/js/bootstrap.min.js"></script>
-    <link  rel="stylesheet" type="text/css" href="less/ps.less">
+    <link rel="stylesheet" type="text/css" href="less/ps.less">
     <script src="$bootstrap/assets/js/jquery-ui-1.10.0.custom.min.js" type="text/javascript"></script>
     <link type="text/css" href="$bootstrap/css/custom-theme/jquery-ui-1.10.0.custom.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="codemirror/lib/codemirror.css">
+    <script src="codemirror/lib/codemirror.js"></script>
+    <script src="codemirror/mode/javascript/javascript.js"></script>
 </head>
 <body>
 <div>
-    <h2>将图片拖入下方框内</h2>
+    <h2>将图片拖入框中</h2>
+
     <div class="img-rounded" id="resizer"></div>
 </div>
-<div id="option" title="Option">
-    <select id="default_effect" class="form-control">
-        <option>Vertical 10</option>
-        <option>Vertical 01</option>
-        <option>Horizontal 10</option>
-        <option>Horizontal 01</option>
-        <option>Vertical 101</option>
-        <option>Vertical 010</option>
-        <option>Horizontal 101</option>
-        <option>Horizontal 010</option>
-        <option>Custom</option>
-    </select>
-    <button id="convert" class="btn btn-primary">Convert</button>
-</div>
+<form class="form-horizontal" role="form" id="option" title="Option">
+    <div class="form-group">
+        <label for="default_effect" class="col-sm-2 control-label">Effect</label>
+
+        <div class="col-sm-10 checkbox" id="flex">
+            <select id="default_effect" class="form-control">
+                <option>Vertical 10</option>
+                <option>Vertical 01</option>
+                <option>Horizontal 10</option>
+                <option>Horizontal 01</option>
+                <option>Vertical 101</option>
+                <option>Vertical 010</option>
+                <option>Horizontal 101</option>
+                <option>Horizontal 010</option>
+            </select>
+            <button id="convert" class="btn btn-primary">Convert</button>
+            <div class="checkbox" id="edit">
+                <label>
+                    <input type="checkbox">打开编辑器
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="form-group edit-group">
+        <label for="name" class="col-sm-2 control-label">Name</label>
+
+        <div class="col-sm-10">
+            <input type="email" class="form-control" id="name" placeholder="效果名称,例如Horizontal 101">
+        </div>
+    </div>
+    <div class="form-group edit-group">
+        <label for="function" class="col-sm-2 control-label">Function</label>
+        <div class="col-sm-10" id="function">
+        </div>
+    </div>
+    <div class="form-group edit-group">
+        <div class="col-sm-offset-2 col-sm-10">
+            <button type="submit" class="btn btn-default switch" id="add">Add Effect</button>
+            <button type="submit" class="btn btn-default switch" id="delete">Delete Effect</button>
+        </div>
+    </div>
+</form>
 <a id="frontboard" title="Result" target="_blank"></a>
 <img id="backboard">
 <script>
+    var map = {
+        rc: function (i, width) {
+            i = i + 1;
+            i = i / 4;
+            var row = Math.ceil(i / width);
+            var column = i - (row - 1) * width;
+            if (column === 0) {
+                column = width;
+            }
+            return {row: row, column: column - 1};
+        },
+        ins: function (rc, width) {
+            if (rc.column < width) {
+                rc.column++;
+            }
+            else if (rc.column === width) {
+                rc.column = 1;
+                rc.row++;
+            }
+            return rc;
+        },
+        render: function (opacity) {
+            var resizer = $('#resizer');
+            var config = {
+                width: resizer.width(),
+                height: resizer.height()
+            }
+            var canvas = '<canvas width="{{width}}px;" height="{{height}}px;"></canvas>';
+            canvas = canvas.replace(/\{\{(.*?)\}\}/g, function ($0, $1) {
+                return config[$1];
+            });
+            canvas = $(canvas);
+            canvas.width(config.width);
+            canvas.height(config.height);
+            var img = $('#backboard');
+            var context = canvas[0].getContext('2d');
+            context.drawImage(img[0], 0, 0, config.width, config.height);
+            var imageData = context.getImageData(0, 0, config.width, config.height);
+            var data = imageData.data;
+            var rc = map.rc(3, config.width);
+            for (var i = 3, l = data.length; i < l; i += 4) {
+                data[i] = opacity(data[i], map.ins(rc, config.width), config);
+            }
+            context.putImageData(imageData, 0, 0);
+            canvas.appendTo($('#frontboard').html(''));
+            $('#frontboard').attr('href', canvas[0].toDataURL("image/png"));
+            return config;
+        },
+        effect: {
+            'vertical 10': function (opacity, rc, config) {
+                return Math.ceil(opacity * rc.row / config.height);
+            },
+            'vertical 01': function (opacity, rc, config) {
+                return Math.ceil(opacity * (1.0 - rc.row / config.height));
+            },
+            'horizontal 10': function (opacity, rc, config) {
+                return Math.ceil(opacity * rc.column / config.width);
+            },
+            'horizontal 01': function (opacity, rc, config) {
+                return Math.ceil(opacity * (1.0 - rc.column / config.width));
+            },
+            'vertical 101': function (opacity, rc, config) {
+                var half = Math.ceil(config.height / 2);
+                if (rc.row > half) {
+                    return Math.ceil(opacity * ( 2 * rc.row / config.height - 1 ));
+                }
+                else {
+                    return Math.ceil(opacity * (1 - 2 * rc.row / config.height));
+                }
+            },
+            'vertical 010': function (opacity, rc, config) {
+                var half = Math.ceil(config.height / 2);
+                if (rc.row < half) {
+                    return Math.ceil(opacity * rc.row * 2 / config.height);
+                }
+                else {
+                    return Math.ceil(opacity * 2 * (1 - rc.row / config.height));
+                }
+            },
+            'horizontal 101': function (opacity, rc, config) {
+                var half = Math.ceil(config.width / 2);
+                if (rc.column > half) {
+                    return Math.ceil(opacity * ( 2 * rc.column / config.width - 1 ));
+                }
+                else {
+                    return Math.ceil(opacity * (1 - 2 * rc.column / config.width));
+                }
+            },
+            'horizontal 010': function (opacity, rc, config) {
+                var half = Math.ceil(config.width / 2);
+                if (rc.column < half) {
+                    return Math.ceil(opacity * rc.column * 2 / config.width);
+                }
+                else {
+                    return Math.ceil(opacity * 2 * (1 - rc.column / config.width));
+                }
+            }
+        }
+    };
     $('#resizer').on('dragenter', function (e) {
         e.originalEvent.dataTransfer.effectAllowed = 'copy';
         e.preventDefault();
@@ -60,151 +191,88 @@
     var option = $('#option').dialog({
         autoOpen: true,
         dialogClass: "no-close",
-        width: 600,
-        position: {at: "right center"}
+        width: 700,
+        position: {at: "right top"}
     });
     var board = $('#frontboard').dialog({
-        width: 600,
         autoOpen: false,
         dialogClass: 'mask',
         position: {at: 'center center'}
     });
+    $('#default_effect').change(function () {
+        if ($('#edit input').prop('checked')) {
+            update();
+        }
+    });
+    $('#edit input').click(function () {
+        if ($(this).prop('checked')) {
+            $('.edit-group').show();
+            update();
+        }
+        else {
+            $('.edit-group').hide();
+        }
+    });
     $('#convert').click(function (event) {
         var key = $('#default_effect').val().toLowerCase();
-        var config = map.render(map[key], map[key.split(' ')[1]]);
+        var config = map.render(map.effect[key]);
         board.dialog('option', 'height', config.height + 30);
         board.dialog('option', 'width', config.width + 20);
         board.dialog('open');
         event.preventDefault();
     });
+    $('#add').click(function () {
+        var key = $('#default_effect').val().toLowerCase();
+        if ('vertical 01 vertical 10 vertical 101 vertical 010 horizontal 10 horizontal 01 horizontal 101 horizontal 010'.indexOf(key) > -1) {
+            alert('基本效果不可改变');
+        }
+        else {
 
-    var map = {
-        'rc': function (i, width) {
-            i = i + 1;
-            i = i / 4;
-            var row = Math.ceil(i / width);
-            var column = i - row * width;
-            if (column === 0) {
-                column = width;
-            }
-            return {row: row, column: column};
-        },
-        'row': function (i, width) {
-            i = i + 1;
-            i = i / 4;
-            i = i / width;
-            return Math.ceil(i);
-        },
-        'column': function (i, width) {
-            i = i + 1;
-            i = i / 4;
-            i = i % width;
-            return i;
-        },
-        render: function (logic, scope) {
-            var resizer = $('#resizer');
-            var config = {
-                width: resizer.width(),
-                height: resizer.height()
-            }
-            var canvas = '<canvas width="{{width}}px;" height="{{height}}px;"></canvas>';
-            canvas = canvas.replace(/\{\{(.*?)\}\}/g, function ($0, $1) {
-                return config[$1];
-            });
-            canvas = $(canvas);
-            canvas.width(config.width);
-            canvas.height(config.height);
-            canvas.appendTo($('#frontboard').html(''));
-            var img = $('#backboard');
-            var context = canvas[0].getContext('2d');
-            context.drawImage(img[0], 0, 0, config.width, config.height);
-            var imageData = context.getImageData(0, 0, config.width, config.height);
-            //logic.call(scope, imageData, config);
-            var data = imageData.data;
-            for (var i = 3; i < data.length; i+= 4) {
-                data[i] = opacity(map.rc(i, config.width), config);
-            }
-            context.putImageData(imageData, 0, 0);
-            $('#frontboard').attr('href', canvas[0].toDataURL("image/png"));
-            return config;
-        },
-        'custom': function (imageData, config) {
-            var multiplier;
-            var data = imageData.data;
-            for (var i = 3; i < data.length; i += 4) {
-                multiplier = data[i];
-                data[i] = this.opacity(map.row(i, config.width), config.height, multiplier);
-            }
-        },
-        'vertical 10': function (imageData, config) {
-            var multiplier;
-            var data = imageData.data;
-            for (var i = 3; i < data.length; i += 4) {
-                multiplier = data[i];
-                data[i] = this.opacity(map.row(i, config.width), config.height, multiplier);
-            }
-        },
-        'horizontal 10': function (imageData, config) {
-            var multiplier;
-            var data = imageData.data;
-            for (var i = 3; i < data.length; i += 4) {
-                multiplier = data[i];
-                data[i] = this.opacity(map.column(i, config.width), config.width, multiplier);
-            }
-        },
-        'vertical 101': function (imageData, config) {
-            var multiplier;
-            var data = imageData.data;
-            for (var i = 3; i < data.length; i += 4) {
-                multiplier = data[i];
-                data[i] = this.opacity(map.row(i, config.width), config.height, multiplier);
-            }
-        },
-        'horizontal 101': function (imageData, config) {
-            var multiplier;
-            var data = imageData.data;
-            for (var i = 3; i < data.length; i += 4) {
-                multiplier = data[i];
-                data[i] = this.opacity(map.column(i, config.width), config.width, multiplier);
-            }
-        },
-        '01': {
-            opacity: function opacity(molecular, denominator, multiplier) {
-                return Math.ceil(multiplier * (denominator - molecular) / denominator);
-            }
-        },
-        '10': {
-            opacity: function opacity(molecular, denominator, multiplier) {
-                return Math.ceil(multiplier * molecular / denominator);
-            }
-        },
-        '010': {
-            opacity: function opacity(molecular, denominator, multiplier) {
-                var half = Math.ceil(denominator / 2);
-                if (molecular < half) {
-                    return Math.ceil(multiplier * molecular * 2 / denominator);
-                }
-                else {
-                    return Math.ceil(multiplier * 2 * (1 -  molecular / denominator));
-                }
-            }
-        },
-        '101': {
-            opacity: function opacity(molecular, denominator, multiplier) {
-                var half = Math.ceil(denominator / 2);
-                if (molecular > half) {
-                    return Math.ceil(multiplier * ( 2 * molecular / denominator - 1 ));
-                }
-                else {
-                    return Math.ceil(multiplier * (1 - 2 * molecular / denominator));
-                }
+        }
+    });
+    var editor = CodeMirror(document.getElementById('function'), {
+        mode: "javascript",
+        lineNumbers: true,
+        lineWrapping: true,
+        indentUnit: 4,
+        smartIndent: true,
+        extraKeys: {"Ctrl-Q": function (cm) {
+            cm.foldCode(cm.getCursor());
+        }},
+        foldGutter: true,
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]});
+    function update() {
+        var key = $('#default_effect').val().toLowerCase();
+        var source = map.effect[key].toSource();
+        editor.setValue(source.substring(1, source.length - 1));
+        $('#name').val(key);
+        if ('vertical 01 vertical 10 vertical 101 vertical 010 horizontal 10 horizontal 01 horizontal 101 horizontal 010 '.indexOf(key + ' ') > -1) {
+            $('.switch').attr("disabled", true);
+        }
+        else {
+            $('.switch').attr("disabled", false);
+        }
+    }
+    $('#name').bind('input propertychange', function() {
+        var key = $(this).val().toLowerCase().trim();
+        if ('vertical 01 vertical 10 vertical 101 vertical 010 horizontal 10 horizontal 01 horizontal 101 horizontal 010'.indexOf(key + ' ') > -1) {
+            $('.switch').attr("disabled", true);
+        }
+        else {
+            $('.switch').attr("disabled", false);
+        }
+    });
+    editor.on('change', function (instance, changes) {
+        if (changes) {
+            if (changes.origin === 'paste') {
+                var from = changes.from;
+                var text = changes.text;
+                var head = {line: from.line + text.length, ch: from.ch};
+                instance.setSelection(from, head);
             }
         }
-    };
-    map['vertical 01'] = map['vertical 10'];
-    map['horizontal 01'] = map['horizontal 10'];
-    map['vertical 010'] = map['vertical 101'];
-    map['horizontal 010'] = map['horizontal 101'];
+        instance.execCommand('indentAuto');
+    });
 </script>
 </body>
 </html>
