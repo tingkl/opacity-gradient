@@ -432,6 +432,11 @@
     -moz-box-shadow: @shadow;
     box-shadow: @shadow;
 }
+.box-shadow4(@left, @top, @right, @bottom) {
+    -webkit-box-shadow: @left, @top, @right, @bottom;
+    -moz-box-shadow: @left, @top, @right, @bottom;
+    box-shadow: @left, @top, @right, @bottom;
+}
 
 // Transitions
 .transition(@transition) {

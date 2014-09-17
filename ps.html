@@ -50,15 +50,18 @@
     </div>
     <div class="form-group edit-group">
         <label for="name" class="col-sm-2 control-label">Name</label>
-
         <div class="col-sm-10">
             <input type="text" class="form-control" id="name" placeholder="效果名称,例如Horizontal 101">
         </div>
     </div>
     <div class="form-group edit-group">
         <label for="function" class="col-sm-2 control-label">Function</label>
-
-        <div class="col-sm-10" id="function">
+        <div class="col-sm-10" >
+            <div id="function">
+                <pre class="pre">function (opacity, rc, config) {</pre>
+                <div id="code"></div>
+                <pre class="pre">}</pre>
+            </div>
         </div>
     </div>
     <div class="form-group edit-group">
@@ -221,7 +224,10 @@
     })[0].focus();
     $('#add').click(function () {
         var key = $('#name').val();
-        $.ajax({url: 'update', type: 'POST', data: {key: key, func: editor.getValue()}, success: function (mapjs) {
+        var func = 'function (opacity, rc, config) {\n' +
+                    editor.getValue() +
+                   '}';
+        $.ajax({url: 'update', type: 'POST', data: {key: key, func: func}, success: function (mapjs) {
             loadMap(mapjs);
         }});
     });
@@ -232,7 +238,44 @@
             initOption();
         }});
     });
-    var editor = CodeMirror(document.getElementById('function'), {
+    function trim(str) {
+        var char;
+        var start = -1;
+        var end = -1;
+        for (var i = 0, l = str.length; i < l; i++) {
+            char = str[i];
+            if (char === ' ') {
+
+            }
+            else if (char === '\n') {
+                start = i;
+                break;
+            }
+            else {
+                break;
+            }
+        }
+        if (start > -1) {
+            str = str.substr(start + 1);
+        }
+        for (var i = str.length - 1; i > 0; i--) {
+            char = str[i];
+            if (i === ' ') {
+            }
+            else if (i === '\n') {
+                end = i;
+                break;
+            }
+            else {
+                break;
+            }
+        }
+        if (end > -1) {
+            str = str.substr(0, end);
+        }
+        return str;
+    }
+    var editor = CodeMirror(document.getElementById('code'), {
         mode: "javascript",
         lineNumbers: true,
         lineWrapping: true,
@@ -246,7 +289,9 @@
     function update() {
         var key = $('#default_effect').val();
         var source = map.effect[key].toSource();
-        editor.setValue(source.substring(1, source.length - 1));
+        var val = source.replace(/\(\s*function\s*\(\s*opacity\s*,\s*rc\s*,\s*config\s*\)\s*\{\s/, '');
+        val = val.substr(0, val.lastIndexOf('}'));
+        editor.setValue(trim(val));
         $('#name').val(key);
         if ('Vertical 01 Vertical 10 Vertical 101 Vertical 010 Horizontal 10 Horizontal 01 Horizontal 101 Horizontal 010 '.indexOf(key + ' ') > -1) {
             $('.switch').attr("disabled", true);
