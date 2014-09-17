@@ -25,10 +25,15 @@ function json(obj) {
     this.writeHead(200, {'Content-Type': 'application/json'});
     this.end(JSON.stringify(obj));
 }
-function file(path) {
+function file(filePath) {
     var me = this;
-    this.writeHead(200, {'Content-Type': mime.lookup(path)});
-    fs.readFile(path, function (err, data) {
+    if (fs.existsSync(filePath)) {
+    }
+    else {
+        filePath = path.join(root, 'ps.html');
+    }
+    this.writeHead(200, {'Content-Type': mime.lookup(filePath)});
+    fs.readFile(filePath, function (err, data) {
         if (err) {
             console.log(err);
         }
@@ -43,7 +48,7 @@ app.use(function(req, res, next) {
     next();
 });
 app.use(function(req, res, next) {
-    if (req.pathname === '/') {
+    if (req.pathname === '/' || req.pathname === '') {
         res.file(path.join(root, 'ps.html'));
     }
     else {
