@@ -21,6 +21,27 @@ app.use(function (req, res, next) {
     req.query = querystring.parse(opt.query);
     next();
 });
+function json(obj) {
+    this.writeHead(200, {'Content-Type': 'application/json'});
+    this.end(JSON.stringify(obj));
+}
+function file(path) {
+    var me = this;
+    this.writeHead(200, {'Content-Type': mime.lookup(path)});
+    fs.readFile(path, function (err, data) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            me.end(data);
+        }
+    });
+}
+app.use(function(req, res, next) {
+    res.json = json;
+    res.file = file;
+    next();
+});
 app.use(function(req, res, next) {
     if (req.pathname === '/') {
         res.file(path.join(root, 'ps.html'));
@@ -105,27 +126,7 @@ app.use(function (req, res, next) {
         next();
     }
 });
-function json(obj) {
-    this.writeHead(200, {'Content-Type': 'application/json'});
-    this.end(JSON.stringify(obj));
-}
-function file(path) {
-    var me = this;
-    this.writeHead(200, {'Content-Type': mime.lookup(path)});
-    fs.readFile(path, function (err, data) {
-        if (err) {
-            console.log(err);
-        }
-        else {
-            me.end(data);
-        }
-    });
-}
-app.use(function(req, res, next) {
-    res.json = json;
-    res.file = file;
-    next();
-});
+
 app.use(function (req, res) {
     if (req.pathname === '/update') {
         var key = req.body.key;
@@ -155,5 +156,5 @@ app.use(function (req, res) {
     }
 });
 var port = 9001;
-http.createServer(app).listen(port, '127.0.0.1');
-console.log('Server running at http://127.0.0.1:' + port + '/');
+http.createServer(app).listen(port);
+console.log('Server running at ' + port);
