@@ -297,8 +297,8 @@
         gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]});
     function update() {
         var key = $('#default_effect').val();
-        var source = map.effect[key].toSource();
-        var val = source.replace(/\(\s*function\s*\(\s*opacity\s*,\s*rc\s*,\s*config\s*\)\s*\{\s/, '');
+        var source = map.effect[key].toString();
+        var val = source.replace(/\s*function\s*\(\s*opacity\s*,\s*rc\s*,\s*config\s*\)\s*\{\s/, '');
         val = val.substr(0, val.lastIndexOf('}'));
         editor.setValue(trim(val));
         $('#name').val(key);
