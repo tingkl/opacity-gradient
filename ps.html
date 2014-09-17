@@ -21,8 +21,7 @@
 </head>
 <body>
 <div>
-    <h2>将图片拖入框中</h2>
-
+    <h2>将图片拖入框中<button id="open" class="btn btn btn-default">Option</button></h2>
     <div class="img-rounded" id="resizer"></div>
 </div>
 <form class="form-horizontal" role="form" id="option" title="Option">
@@ -41,7 +40,7 @@
         <div class="col-sm-10 checkbox" id="flex">
             <select id="default_effect" class="form-control">
             </select>
-            <button id="convert" class="btn btn-primary">Convert</button>
+            <button id="convert" type="button" class="btn btn-primary">Convert</button>
             <div class="checkbox" id="edit">
                 <label>
                     <input type="checkbox">打开编辑器
@@ -193,7 +192,9 @@
         width: 700,
         position: {at: "right top"}
     });
-
+    $('#open').click(function() {
+        option.dialog('open');
+    });
     $('#default_effect').change(function () {
         if ($('#edit input').prop('checked')) {
             update();
