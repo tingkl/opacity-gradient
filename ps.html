@@ -18,6 +18,14 @@
     <link rel="stylesheet" href="codemirror/lib/codemirror.css">
     <script src="codemirror/lib/codemirror.js"></script>
     <script src="codemirror/mode/javascript/javascript.js"></script>
+    <style>
+        .CodeMirror {
+            font-family: monospace;
+            height: auto;
+            min-height: 100px;
+            background: transparent;
+        }
+    </style>
 </head>
 <body>
 <div>
@@ -280,6 +288,7 @@
         lineNumbers: true,
         lineWrapping: true,
         indentUnit: 4,
+        height: 430,
         smartIndent: true,
         extraKeys: {"Ctrl-Q": function (cm) {
             cm.foldCode(cm.getCursor());
