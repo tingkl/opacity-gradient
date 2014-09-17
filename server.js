@@ -21,6 +21,14 @@ app.use(function (req, res, next) {
     req.query = querystring.parse(opt.query);
     next();
 });
+app.use(function(req, res, next) {
+    if (req.pathname === '/') {
+        res.file(path.join(root, 'ps.html'));
+    }
+    else {
+        next();
+    }
+});
 app.use(function (req, res, next) {
     if (req.method === 'POST') {
         var buffers = [];
