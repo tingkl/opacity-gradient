@@ -160,9 +160,9 @@ app.use(function (req, res) {
         res.file(path.join(root, req.pathname));
     }
 });
-var cluster = require('cluster');
+//var cluster = require('cluster');
 var port = 8998;
-if (cluster.isMaster) {
+/*if (cluster.isMaster) {
     cluster.fork();
     cluster.on('death', function(work) {
         console.log('worker ' + work.pid + ' died');
@@ -170,7 +170,7 @@ if (cluster.isMaster) {
     });
 } else {
     port = 9001;
-}
+}*/
 var server = http.createServer(app);
 server.listen(port);
 console.log('Server running at ' + port);
